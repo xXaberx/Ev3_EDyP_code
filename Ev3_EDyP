@@ -275,7 +275,7 @@ while True:
         reportes=input("¿Que desea realizar con los reportes?\n")
         if reportes == "A":
             fecha_consulta=input("Ingrese la fecha que quiera verificar\n")
-            fecha_procesada=datetime.datetime.strptime(fecha_consulta, "%Y-%m-%Y").date()
+            fecha_procesada=datetime.datetime.strptime(fecha_consulta, "%Y-%m-%d").date()
             try:
                 with sqlite3.connect("Evidencia3.db", detect_types = sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES) as conn:
                     mi_cursor = conn.cursor()
