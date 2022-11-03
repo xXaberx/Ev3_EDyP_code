@@ -1,0 +1,168 @@
+import sys
+import random
+import datetime
+import os
+import openpyxl
+import sqlite3
+from sqlite3 import Error
+
+clientes={}
+salas={}
+diccionario_eventos={}
+
+try:
+    with sqlite3.connect("Evidencia3.db") as conn:
+        mi_cursor = conn.cursor()
+        mi_cursor.execute("CREATE TABLE IF NOT EXISTS clientes (matricula INTEGER PRIMARY KEY, cliente TEXT NOT NULL);")
+        mi_cursor.execute("CREATE TABLE IF NOT EXISTS salas (clave_sala INTEGER PRIMARY KEY, nom TEXT NOT NULL,cupo TEXT NOT NULL);")
+        mi_cursor.execute("CREATE TABLE IF NOT EXISTS eventos (clave INTEGER PRIMARY KEY, nombre_eventos TEXT NOT NULL,fechap timestamp,salas INTEGER, clientes INTEGER, turno TEXT NOT NULL, FOREIGN KEY(salas) REFERENCES salas(clave_salas),FOREIGN KEY(clientes) REFERENCES clientes(matricula));")
+        
+except Error as e:
+    print (e)
+except:
+    print(f"Se produjo el siguiente error: {sys.exc_info()[0]}")
+finally:
+    conn.close()
+
+while True:
+    print("Le damos la bienvenida, elija una de nuestras opciones de menú"
+    """
+    1:Reservaciones
+    2:Reportes
+    3:Registro de sala
+    4:Registro de un cliente
+    5:Salir
+    """)
+    orden=input("¿Qué operacion desea revisar\n")
+    
+    if orden=="1":
+        print("""   
+    A:Registrar una nueva reservacion
+    B:Modificar una reservacion
+    C:Consultar la disponibilidad de una sala para una fecha
+    D:Eliminar una reservacion
+    E:Volver 
+        """)
+        reservaciones=input("¿Que desea realizar con las reservaciones?\n")
+        if reservaciones == "A":
+            print(clientes)
+            cliente=int(input("Elija su clave de cliente\n"))
+            if cliente in clientes:        
+                fecha_actual=datetime.date.today()
+                #de aqui el codigo de alpha        
+                clave=max(list(diccionario_eventos.keys()),default=3)+1
+                nombre_evento=input("Nombre del evento\n")
+                turno=input("Seleccione el turno M/V/N\n")
+                print(salas)
+                registro_sala=int(input("¿En que sala desea registrar su evento?\n"))
+                print("Si despues de este aviso no pide la fecha la sala no existe")
+                #de vuelta al codigo original
+                try:
+                    if turno != "M" and turno !="V" and turno != "N":
+                        print("seleccione un turno valido")
+                    else:                                    
+                        for clave_salas in salas.items():
+                            if registro_sala != clave_salas[0]:
+                                print("")
+                            else:
+                                fecha=input("Que fecha desea que sea su evento? (dd/mm/aaaa): \n")
+                                fechap = datetime.datetime.strptime(fecha, "%d/%m/%Y").date()
+                                cant_dias = 3
+                                dia=fecha_actual.day
+                                dia_n=fechap.day
+                                eventos=(nombre_evento,fechap,turno,registro_sala,cliente)
+                                if fechap < fecha_actual:
+                                    print("La fecha que usted puso no se encuentra disponible")
+                                else:
+                                    if fecha_actual + datetime.timedelta(days=+cant_dias) <= fechap:
+                                       fecha_reservada = ""
+                                       turno_reservado = ""
+                                       for clave,valo in diccionario_eventos.items():                                            
+                                           if fechap == valo[1] and turno == valo[2] and registro_sala==valo[3]:
+                                               fecha_reservada = valo[1]
+                                               turno_reservado = valo[2]
+                                               sala_reservada  = valo[3]
+                                       if fechap == fecha_reservada and turno == turno_reservado and registro_sala == sala_reservada:
+                                           print("Ya existe una reservacion en ese turno,Favor de intentar en otro Turno:")
+                                        
+                                       else:
+                                           if fecha_actual + datetime.timedelta(days=+cant_dias) >= fechap: 
+                                               print("Se debe hacer una reservacion al menos 2 dias antes de su evento")
+                                           else:
+                                               clave=max(list(diccionario_eventos.keys()),default=3)+1
+                                               diccionario_eventos[clave] = eventos
+                                     
+                                    else:
+                                        if fecha_actual + datetime.timedelta(days=+cant_dias) >= fechap: 
+                                            print("Se debe hacer una reservacion al menos 2 dias antes de su evento")
+                                                                           
+                                                                    
+                except Exception:
+                    print("El formato de la fecha no es valido")
+            else:
+                print("necesita ser cliente para reservar una sala")
+        
+    
+    if orden=="2":
+        print("""
+    A:Mostrar el reporte tabular
+    B:Exportar el reporte tabular
+    C:Volver
+        """)
+        reportes=input("¿Que desea realizar con los reportes?\n")
+
+        
+     
+    if orden=="3":
+        clave_sala=0
+        clave_sala=clave_sala+1
+        nom=input("Escriba el nombre de la sala\n")
+        if (nom.isspace() or len(nom) <= 0):
+            print("El nombre no puede omitirse")
+        else:
+            cupo=input("Seleccione el cupo\n")
+            if (cupo.isspace() or len(cupo) <= 0):
+                print("El cupo no puede omitirse")
+            else:
+                if int(cupo) <= 0:
+                    print("El cupo debe ser mayor que 0")
+                else:
+                    Salas=(nom,cupo)
+                    salas[clave_sala]=Salas
+                    try:
+                        with sqlite3.connect("Evidencia3.db") as conn:
+                            mi_cursor = conn.cursor()
+                            Salas=(clave_sala,nom,cupo)
+                            mi_cursor.execute("INSERT INTO salas VALUES(?,?,?)", Salas)
+                            print("Registro agregado exitosamente")
+                    except Error as e:
+                        print (e)
+                    except:
+                        print(f"Se produjo el siguiente error: {sys.exc_info()[0]}")
+                    finally:
+                        conn.close()
+        
+    
+    if orden=="4":
+        matricula=2000
+        matricula=matricula+1
+        cliente=input("Ingrese su nombre\n")
+        if (cliente.isspace() or len(cliente) <= 0):
+            print("El nombre no puede omitirse")
+        else:
+            clientes[matricula]={cliente}
+            try:
+                with sqlite3.connect("Evidencia3.db") as conn:
+                    mi_cursor = conn.cursor()
+                    clientes=(matricula,cliente)
+                    mi_cursor.execute("INSERT INTO clientes VALUES(?,?)", clientes)
+                    print("Registro agregado exitosamente")
+            except Error as e:
+                print (e)
+            except:
+                print(f"Se produjo el siguiente error: {sys.exc_info()[0]}")
+            finally:
+                conn.close()
+        
+    if orden=="5":
+        break
